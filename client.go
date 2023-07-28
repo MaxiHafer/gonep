@@ -1,125 +1,129 @@
 package gonep
 
 import (
-	"bufio"
-	"encoding/binary"
-	"github.com/maxihafer/gonep/pkg/pointer"
-	"golang.org/x/net/publicsuffix"
+	"context"
+	"encoding/json"
+	"github.com/maxihafer/gonep/internal"
 	"net/http"
-	"net/http/cookiejar"
 	"net/url"
+	"strings"
 )
 
-func NewInitializedClientFromEnv() (*Client, error) {
-	client, err := NewClientFromEnv()
-	if err != nil {
-		return nil, err
+const (
+	NepViewerBasePath = "pv_monitor/appservice"
+	LoginRequestPath  = "login"
+)
+
+var (
+	defaultBaseUrl = &url.URL{
+		Scheme: "http",
+		Host:   "nep.nepviewer.com",
+		Path:   "/pv_monitor/appservice",
 	}
 
-	if err = client.Init(); err != nil {
-		return nil, err
+	defaultUsername = "anonymous"
+)
+
+func NewClient(opts ...ClientOption) *Client {
+	c := &Client{
+		BaseURL:    defaultBaseUrl,
+		httpClient: http.DefaultClient,
+		username:   defaultUsername,
 	}
 
-	return client, nil
-}
-
-func NewInitializedClient(config *Config) (*Client, error) {
-	client := NewClient(config)
-
-	if err := client.Init(); err != nil {
-		return nil, err
+	for _, opt := range opts {
+		opt(c)
 	}
 
-	return client, nil
-}
-
-func NewClientFromEnv() (*Client, error) {
-	config := &Config{}
-	if err := config.FromEnv(); err != nil {
-		return nil, err
-	}
-
-	return NewClient(config), nil
-}
-
-func NewClient(config *Config) *Client {
-	return &Client{
-		config: config,
-		Client: &http.Client{},
-	}
+	return c
 }
 
 type Client struct {
-	config *Config
-	*http.Client
+	username string
+	password string
+	BaseURL  *url.URL
 
-	token *string
+	httpClient *http.Client
+	token      *string
 }
 
-func (c *Client) Init() error {
-	cookieJar, err := cookiejar.New(&cookiejar.Options{
-		PublicSuffixList: publicsuffix.List,
-	})
+func (c *Client) newRequest(ctx context.Context, method, path string, body *url.Values) (*http.Request, error) {
+	rel := &url.URL{Path: path}
+	u := c.BaseURL.ResolveReference(rel)
+
+	if body == nil {
+		body = &url.Values{}
+	}
+
+	if mustAuthenticate := c.token == nil; mustAuthenticate {
+		if err := c.authenticate(); err != nil {
+			return nil, err
+		}
+	}
+
+	body.Set("token", *c.token)
+
+	req, err := http.NewRequestWithContext(ctx, method, u.String(), strings.NewReader(body.Encode()))
 	if err != nil {
-		return err
-	}
-	c.Jar = cookieJar
-
-	reqUrl := url.URL{
-		Host:   c.config.BaseURL,
-		Scheme: c.config.Scheme,
-		Path:   "pv_manager/pv.php",
+		return nil, err
 	}
 
-	resp, err := c.Get(reqUrl.String())
-	if err != nil {
-		return err
-	}
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
-	return resp.Body.Close()
+	return http.NewRequestWithContext(ctx, method, u.String(), strings.NewReader(body.Encode()))
 }
 
-func (c *Client) getCaptcha() (*int, error) {
-	reqUrl := &url.URL{
-		Host:   c.config.BaseURL,
-		Scheme: c.config.Scheme,
-		Path:   "/pv_manager/captcha.php",
+func (c *Client) ListPVPlants(ctx context.Context) ([]PVPlant, error) {
+	req, err := c.newRequest(ctx, http.MethodPost, "/pvlist", nil)
+	if err != nil {
+		return nil, err
 	}
-
-	resp, err := c.Get(reqUrl.String())
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	captcha, err := binary.ReadVarint(bufio.NewReader(resp.Body))
-	if err != nil {
+	plantResp := ListPlantsResponse{}
+	if err := json.NewDecoder(resp.Body).Decode(&plantResp); err != nil {
 		return nil, err
 	}
 
-	return pointer.Of(int(captcha)), nil
+	return plantResp.Plants, nil
 }
 
-func (c *Client) login() error {
-	captcha, err := c.getCaptcha()
+func (c *Client) authenticate() error {
+	rel := &url.URL{Path: "login"}
+	u := c.BaseURL.ResolveReference(rel)
+
+	body := &url.Values{}
+	body.Set("email", c.username)
+	body.Set("password", c.password)
+
+	loginReq, err := http.NewRequest(http.MethodPost, u.String(), strings.NewReader(body.Encode()))
 	if err != nil {
 		return err
 	}
+	loginReq.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
-	reqUrl := &url.URL{
-		Scheme: c.config.Scheme,
-		Host:   c.config.BaseURL,
-		Path:   "/pv_manager/login.php",
+	resp, err := c.httpClient.Do(loginReq)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	loginResp := internal.LoginResponse{}
+	if err := json.NewDecoder(resp.Body).Decode(&loginResp); err != nil {
+		return err
 	}
 
-	// TODO: Do auth magic rel: https://lanbugs.de/go-golang-co/go-http-client-post-form-data-x-www-form-urlencoded/
-}
-
-func (c *Client) do() (*http.Response, error) {
-	if c.token == nil {
-		//captcha, err := c.getCaptcha()
-		if err := c.login(); err != nil {
-			return nil, err
+	if loginResp.Status != 1 {
+		return UnsuccessfulLoginError{
+			loginResp.Msg,
 		}
 	}
+
+	c.token = &loginResp.Data.Token
+
+	return nil
 }

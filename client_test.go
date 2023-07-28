@@ -1,8 +1,8 @@
 package gonep
 
 import (
+	"context"
 	"github.com/stretchr/testify/suite"
-	"net/url"
 	"testing"
 )
 
@@ -18,28 +18,24 @@ type ClientTestSuite struct {
 }
 
 func (s *ClientTestSuite) SetupSuite() {
-	//This requires real credentials loaded into env
+	s.config = &Config{}
+	//Tests require real credentials loaded into env
 	s.Require().NoError(s.config.FromEnv())
 }
 
 func (s *ClientTestSuite) SetupTest() {
-	s.client = NewClient(s.config)
-
-	s.Require().NoError(s.client.Init())
+	s.client = NewClient(
+		WithUserPassword(s.config.User, s.config.Password),
+	)
 }
 
-func (s *ClientTestSuite) TestClientInit() {
-	cookies := s.client.Jar.Cookies(&url.URL{
-		Scheme: s.client.config.Scheme,
-		Host:   s.client.config.BaseURL,
-	})
+func (s *ClientTestSuite) TestListPVPlants() {
+	ctx := context.Background()
 
-	s.Require().Equal(cookies[0].Name, "PHPSESSID")
-}
-
-func (s *ClientTestSuite) TestGetCaptcha() {
-	captcha, err := s.client.getCaptcha()
+	_, err := s.client.ListPVPlants(ctx)
 	s.Require().NoError(err)
-	s.Require().Greater(*captcha, 0)
-	s.Require().Less(*captcha, 10000)
+}
+
+func (s *ClientTestSuite) TestAuthenticate() {
+	s.Require().NoError(s.client.authenticate())
 }
