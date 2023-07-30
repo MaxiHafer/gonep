@@ -2,6 +2,8 @@ package gonep
 
 import (
 	"context"
+	"fmt"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/suite"
 	"testing"
 )
@@ -24,16 +26,32 @@ func (s *ClientTestSuite) SetupSuite() {
 }
 
 func (s *ClientTestSuite) SetupTest() {
-	s.client = NewClient(
+	var err error
+	s.client, err = NewClient(
 		WithUserPassword(s.config.User, s.config.Password),
 	)
+	s.Require().NoError(err)
 }
 
 func (s *ClientTestSuite) TestListPVPlants() {
 	ctx := context.Background()
 
-	_, err := s.client.ListPVPlants(ctx)
+	plants, err := s.client.ListPlants(ctx)
 	s.Require().NoError(err)
+	logrus.WithField("plants", fmt.Sprintf("%+v", plants)).Info("Got plants")
+}
+
+func (s *ClientTestSuite) TestGetPlantStatus() {
+	ctx := context.Background()
+
+	plants, err := s.client.ListPlants(ctx)
+	s.Require().NoError(err)
+
+	status, err := s.client.GetPlantStatus(ctx, plants[0].Sid)
+	s.Require().NoError(err)
+	s.Require().NotNil(status)
+
+	fmt.Printf("%#v", status)
 }
 
 func (s *ClientTestSuite) TestAuthenticate() {

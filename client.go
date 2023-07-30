@@ -3,8 +3,12 @@ package gonep
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"github.com/maxihafer/gonep/internal"
+	"golang.org/x/net/publicsuffix"
 	"net/http"
+	"net/http/cookiejar"
 	"net/url"
 	"strings"
 )
@@ -18,24 +22,32 @@ var (
 	defaultBaseUrl = &url.URL{
 		Scheme: "http",
 		Host:   "nep.nepviewer.com",
-		Path:   "/pv_monitor/appservice",
+		Path:   "/pv_monitor/appservice/",
 	}
 
 	defaultUsername = "anonymous"
 )
 
-func NewClient(opts ...ClientOption) *Client {
+func NewClient(opts ...ClientOption) (*Client, error) {
 	c := &Client{
 		BaseURL:    defaultBaseUrl,
 		httpClient: http.DefaultClient,
 		username:   defaultUsername,
 	}
 
+	var err error
+	c.httpClient.Jar, err = cookiejar.New(&cookiejar.Options{
+		PublicSuffixList: publicsuffix.List,
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	for _, opt := range opts {
 		opt(c)
 	}
 
-	return c
+	return c, nil
 }
 
 type Client struct {
@@ -70,11 +82,31 @@ func (c *Client) newRequest(ctx context.Context, method, path string, body *url.
 
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
-	return http.NewRequestWithContext(ctx, method, u.String(), strings.NewReader(body.Encode()))
+	return req, nil
 }
 
-func (c *Client) ListPVPlants(ctx context.Context) ([]PVPlant, error) {
-	req, err := c.newRequest(ctx, http.MethodPost, "/pvlist", nil)
+func (c *Client) GetPlantStatus(ctx context.Context, sid string) (*PlantStatus, error) {
+	req, err := c.newRequest(ctx, http.MethodPost, fmt.Sprintf("status/%s", sid), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	statusResp := GetPlantStatusResponse{}
+	if err := json.NewDecoder(resp.Body).Decode(&statusResp); err != nil {
+		return nil, err
+	}
+
+	return statusResp.PlantStatus()
+}
+
+func (c *Client) ListPlants(ctx context.Context) ([]Plant, error) {
+	req, err := c.newRequest(ctx, http.MethodPost, "pvlist", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +121,11 @@ func (c *Client) ListPVPlants(ctx context.Context) ([]PVPlant, error) {
 		return nil, err
 	}
 
-	return plantResp.Plants, nil
+	if plantResp.Status != 1 {
+		return nil, errors.New(fmt.Sprintf("received code: %v, message: %s", plantResp.Status, plantResp.Msg))
+	}
+
+	return plantResp.Data.Plants, nil
 }
 
 func (c *Client) authenticate() error {
