@@ -25,7 +25,7 @@ func (s *service) Status(ctx context.Context, id string) (*Status, error) {
 	resp, err := s.client.R().
 		SetContext(ctx).
 		SetPathParam("id", id).
-		Get("/status/{id}")
+		Post("/status/{id}")
 
 	if err != nil {
 		return nil, err
@@ -42,12 +42,12 @@ func (s *service) Status(ctx context.Context, id string) (*Status, error) {
 func (s *service) List(ctx context.Context) ([]*Plant, error) {
 	resp, err := s.client.R().
 		SetContext(ctx).
-		Get("/pvlist")
+		Post("/pvlist")
 	if err != nil {
 		return nil, err
 	}
 
-	var plants []*Plant
+	var plants PlantList
 	if err := json.Unmarshal(resp.Body(), &plants); err != nil {
 		return nil, err
 	}

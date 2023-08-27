@@ -36,7 +36,7 @@ func (s *ClientTestSuite) SetupTest() {
 func (s *ClientTestSuite) TestListPVPlants() {
 	ctx := context.Background()
 
-	plants, err := s.client.ListPlants(ctx)
+	plants, err := s.client.Plants().List(ctx)
 	s.Require().NoError(err)
 	logrus.WithField("plants", fmt.Sprintf("%+v", plants)).Info("Got plants")
 }
@@ -44,16 +44,12 @@ func (s *ClientTestSuite) TestListPVPlants() {
 func (s *ClientTestSuite) TestGetPlantStatus() {
 	ctx := context.Background()
 
-	plants, err := s.client.ListPlants(ctx)
+	plants, err := s.client.Plants().List(ctx)
 	s.Require().NoError(err)
 
-	status, err := s.client.GetPlantStatus(ctx, plants[0].Sid)
+	status, err := s.client.Plants().Status(ctx, plants[0].Sid)
 	s.Require().NoError(err)
 	s.Require().NotNil(status)
 
 	fmt.Printf("%#v", status)
-}
-
-func (s *ClientTestSuite) TestAuthenticate() {
-	s.Require().NoError(s.client.authenticate())
 }

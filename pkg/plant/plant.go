@@ -2,10 +2,9 @@ package plant
 
 import (
 	"encoding/json"
-	"fmt"
 )
 
-var _ json.Unmarshaler = (*Plant)(nil)
+var _ json.Unmarshaler = (*PlantList)(nil)
 
 type Plant struct {
 	Sid               string   `json:"Sid,omitempty"`
@@ -42,11 +41,9 @@ func (p *PlantList) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	for i := len(raw.Data.Plants) {
-
+	for i := range raw.Data.Plants {
+		*p = append(*p, raw.Data.Plants[i])
 	}
-}
 
-func (p *Plant) String() string {
-	return fmt.Sprintf("Sid:%s")
+	return nil
 }

@@ -44,7 +44,12 @@ func (p *BasicProvider) fetchToken(ctx context.Context, client *resty.Client) (*
 	body.Set("email", p.Username)
 	body.Set("password", p.Password)
 
-	resp, err := client.R().
+	// use copy because we cannot disable the authentication middleware
+	authClient := resty.NewWithClient(client.GetClient())
+	authClient.SetBaseURL(client.BaseURL)
+	authClient.SetScheme("http")
+
+	resp, err := authClient.R().
 		SetContext(ctx).
 		SetFormDataFromValues(body).
 		SetHeader("Cache-Control", "no-cache").
@@ -59,7 +64,7 @@ func (p *BasicProvider) fetchToken(ctx context.Context, client *resty.Client) (*
 		return nil, err
 	}
 
-	if loginResponse.Status != 0 {
+	if loginResponse.Status != 1 {
 		return nil, fmt.Errorf("authentication/basic: error status code '%v', message: '%s'", loginResponse.Status, loginResponse.Msg)
 	}
 
