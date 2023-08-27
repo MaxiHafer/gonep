@@ -73,7 +73,7 @@ func main() {
 						Name:  "list",
 						Usage: "list photovoltaic plants",
 						Action: func(ctx *cli.Context) error {
-							plants, err := client.ListPlants(ctx.Context)
+							plants, err := client.Plants().List(ctx.Context)
 							if err != nil {
 								return err
 							}
