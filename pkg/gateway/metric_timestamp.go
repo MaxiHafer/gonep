@@ -3,6 +3,7 @@ package gateway
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/maxihafer/gonep/pkg/pointer"
 	"time"
 )
 
@@ -10,7 +11,7 @@ var _ Metric = (*timestampMetric)(nil)
 var _ json.Unmarshaler = (*timestampMetric)(nil)
 
 type timestampMetric struct {
-	Timestamp time.Time
+	Timestamp *time.Time
 	Watts     int
 }
 
@@ -30,17 +31,21 @@ func (d *timestampMetric) UnmarshalJSON(bytes []byte) error {
 	}
 
 	wattsF, ok := data[1].(float64)
-	if !ok {
+	if !ok && data[1] != nil {
 		return fmt.Errorf("%v is not representable as type float64", data[1])
 	}
 
-	d.Timestamp = time.UnixMilli(int64(timestampF))
+	d.Timestamp = pointer.Of(time.UnixMilli(int64(timestampF)))
+	if d.Timestamp.IsZero() {
+		d.Timestamp = nil
+	}
+
 	d.Watts = int(wattsF)
 
 	return nil
 }
 
-func (d *timestampMetric) Time() time.Time {
+func (d *timestampMetric) Time() *time.Time {
 	return d.Timestamp
 }
 
