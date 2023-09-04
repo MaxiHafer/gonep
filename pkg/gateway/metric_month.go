@@ -14,7 +14,7 @@ var _ Metric = (*monthMetric)(nil)
 var _ json.Unmarshaler = (*monthMetric)(nil)
 
 type monthMetric struct {
-	Timestamp time.Time
+	Timestamp *time.Time
 	Watts     int
 }
 
@@ -40,13 +40,13 @@ func (d *monthMetric) UnmarshalJSON(bytes []byte) error {
 		return fmt.Errorf("timestamp string: %s does not match time format: %s", timestampStr, monthFormat)
 	}
 
-	d.Timestamp = ts
+	d.Timestamp = &ts
 	d.Watts = int(wattsF)
 
 	return nil
 }
 
-func (d *monthMetric) Time() time.Time {
+func (d *monthMetric) Time() *time.Time {
 	return d.Timestamp
 }
 

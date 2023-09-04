@@ -14,7 +14,7 @@ var _ Metric = (*dayMetric)(nil)
 var _ json.Unmarshaler = (*dayMetric)(nil)
 
 type dayMetric struct {
-	Timestamp time.Time
+	Timestamp *time.Time
 	Watts     int
 }
 
@@ -43,13 +43,13 @@ func (d *dayMetric) UnmarshalJSON(bytes []byte) error {
 	now := time.Now()
 	ts = time.Date(now.Year(), ts.Month(), ts.Day(), 0, 0, 0, 0, time.Local)
 
-	d.Timestamp = ts
+	d.Timestamp = &ts
 	d.Watts = int(wattsF)
 
 	return nil
 }
 
-func (d *dayMetric) Time() time.Time {
+func (d *dayMetric) Time() *time.Time {
 	return d.Timestamp
 }
 

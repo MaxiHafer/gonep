@@ -14,7 +14,7 @@ func NewService(client *resty.Client) Service {
 }
 
 type Metric interface {
-	Time() time.Time
+	Time() *time.Time
 	Value() int
 }
 
