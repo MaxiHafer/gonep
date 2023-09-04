@@ -14,8 +14,8 @@ var _ Metric = (*monthMetric)(nil)
 var _ json.Unmarshaler = (*monthMetric)(nil)
 
 type monthMetric struct {
-	Timestamp *time.Time
-	Watts     int
+	ts  *time.Time
+	kwh float64
 }
 
 func (d *monthMetric) UnmarshalJSON(bytes []byte) error {
@@ -30,7 +30,7 @@ func (d *monthMetric) UnmarshalJSON(bytes []byte) error {
 
 	timestampStr := fmt.Sprintf("%v", data[0])
 
-	wattsF, ok := data[1].(float64)
+	kwh, ok := data[1].(float64)
 	if !ok {
 		return fmt.Errorf("%v is not convertible to type string float64", data[1])
 	}
@@ -40,16 +40,16 @@ func (d *monthMetric) UnmarshalJSON(bytes []byte) error {
 		return fmt.Errorf("timestamp string: %s does not match time format: %s", timestampStr, monthFormat)
 	}
 
-	d.Timestamp = &ts
-	d.Watts = int(wattsF)
+	d.ts = &ts
+	d.kwh = kwh
 
 	return nil
 }
 
 func (d *monthMetric) Time() *time.Time {
-	return d.Timestamp
+	return d.ts
 }
 
-func (d *monthMetric) Value() int {
-	return d.Watts
+func (d *monthMetric) KilowattHours() float64 {
+	return d.kwh
 }

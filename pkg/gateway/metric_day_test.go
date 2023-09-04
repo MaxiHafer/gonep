@@ -8,8 +8,6 @@ import (
 	"time"
 )
 
-var ()
-
 func TestDayMetric_UnmarshalJSON(t *testing.T) {
 	var metrics []*dayMetric
 
@@ -17,16 +15,16 @@ func TestDayMetric_UnmarshalJSON(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Contains(t, metrics, &dayMetric{
-		Timestamp: pointer.Of(
+		ts: pointer.Of(
 			time.Date(2023, time.January, 1, 0, 0, 0, 0, time.Local),
 		),
-		Watts: 29,
+		kwh: 0.3,
 	})
 
 	require.Contains(t, metrics, &dayMetric{
-		Timestamp: pointer.Of(time.Date(
+		ts: pointer.Of(time.Date(
 			2023, time.January, 2, 0, 0, 0, 0, time.Local),
 		),
-		Watts: 23,
+		kwh: 1.8,
 	})
 }

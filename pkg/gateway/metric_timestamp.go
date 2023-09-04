@@ -7,12 +7,12 @@ import (
 	"time"
 )
 
-var _ Metric = (*timestampMetric)(nil)
+var _ DetailMetric = (*timestampMetric)(nil)
 var _ json.Unmarshaler = (*timestampMetric)(nil)
 
 type timestampMetric struct {
-	Timestamp *time.Time
-	Watts     int
+	ts    *time.Time
+	watts int
 }
 
 func (d *timestampMetric) UnmarshalJSON(bytes []byte) error {
@@ -35,20 +35,20 @@ func (d *timestampMetric) UnmarshalJSON(bytes []byte) error {
 		return fmt.Errorf("%v is not representable as type float64", data[1])
 	}
 
-	d.Timestamp = pointer.Of(time.UnixMilli(int64(timestampF)))
-	if d.Timestamp.IsZero() {
-		d.Timestamp = nil
+	d.ts = pointer.Of(time.UnixMilli(int64(timestampF)))
+	if d.ts.IsZero() {
+		d.ts = nil
 	}
 
-	d.Watts = int(wattsF)
+	d.watts = int(wattsF)
 
 	return nil
 }
 
 func (d *timestampMetric) Time() *time.Time {
-	return d.Timestamp
+	return d.ts
 }
 
-func (d *timestampMetric) Value() int {
-	return d.Watts
+func (d *timestampMetric) Watts() int {
+	return d.watts
 }

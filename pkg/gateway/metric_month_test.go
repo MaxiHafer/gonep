@@ -15,16 +15,16 @@ func TestMonthMetric_UnmarshalJSON(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Contains(t, metrics, &monthMetric{
-		Timestamp: pointer.Of(
+		ts: pointer.Of(
 			time.Date(2023, time.January, 1, 0, 0, 0, 0, time.Local),
 		),
-		Watts: 29,
+		kwh: 29,
 	})
 
 	require.Contains(t, metrics, &monthMetric{
-		Timestamp: pointer.Of(
+		ts: pointer.Of(
 			time.Date(2023, time.February, 1, 0, 0, 0, 0, time.Local),
 		),
-		Watts: 23,
+		kwh: 23,
 	})
 }
