@@ -14,8 +14,8 @@ var _ Metric = (*dayMetric)(nil)
 var _ json.Unmarshaler = (*dayMetric)(nil)
 
 type dayMetric struct {
-	Timestamp *time.Time
-	Watts     int
+	ts  *time.Time
+	kwh float64
 }
 
 func (d *dayMetric) UnmarshalJSON(bytes []byte) error {
@@ -30,7 +30,7 @@ func (d *dayMetric) UnmarshalJSON(bytes []byte) error {
 
 	timestampStr := fmt.Sprintf("%v", data[0])
 
-	wattsF, ok := data[1].(float64)
+	kwh, ok := data[1].(float64)
 	if !ok {
 		return fmt.Errorf("%v is not representable as type float64", data[1])
 	}
@@ -43,16 +43,16 @@ func (d *dayMetric) UnmarshalJSON(bytes []byte) error {
 	now := time.Now()
 	ts = time.Date(now.Year(), ts.Month(), ts.Day(), 0, 0, 0, 0, time.Local)
 
-	d.Timestamp = &ts
-	d.Watts = int(wattsF)
+	d.ts = &ts
+	d.kwh = kwh
 
 	return nil
 }
 
 func (d *dayMetric) Time() *time.Time {
-	return d.Timestamp
+	return d.ts
 }
 
-func (d *dayMetric) Value() int {
-	return d.Watts
+func (d *dayMetric) KilowattHours() float64 {
+	return d.kwh
 }

@@ -15,11 +15,16 @@ func NewService(client *resty.Client) Service {
 
 type Metric interface {
 	Time() *time.Time
-	Value() int
+	KilowattHours() float64
+}
+
+type DetailMetric interface {
+	Time() *time.Time
+	Watts() int
 }
 
 type Service interface {
-	Today(ctx context.Context, id string) ([]Metric, error)
+	Today(ctx context.Context, id string) ([]DetailMetric, error)
 	Week(ctx context.Context, id string) ([]Metric, error)
 	Month(ctx context.Context, id string) ([]Metric, error)
 	Year(ctx context.Context, id string) ([]Metric, error)
@@ -29,7 +34,7 @@ type service struct {
 	client *resty.Client
 }
 
-func (s *service) Today(ctx context.Context, id string) ([]Metric, error) {
+func (s *service) Today(ctx context.Context, id string) ([]DetailMetric, error) {
 	resp, err := s.client.R().
 		SetContext(ctx).
 		SetPathParam("id", id).
@@ -44,7 +49,7 @@ func (s *service) Today(ctx context.Context, id string) ([]Metric, error) {
 		return nil, err
 	}
 
-	metrics := make([]Metric, len(tsMetrics))
+	metrics := make([]DetailMetric, len(tsMetrics))
 	for i := range tsMetrics {
 		metrics[i] = tsMetrics[i]
 	}

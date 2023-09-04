@@ -14,15 +14,15 @@ func TestMetric_UnmarshalJSON(t *testing.T) {
 
 	require.NoError(t, err)
 	require.Contains(t, metrics, &timestampMetric{
-		Timestamp: pointer.Of(
+		ts: pointer.Of(
 			time.UnixMilli(1693161960000),
 		),
-		Watts: 29,
+		watts: 29,
 	})
 	require.Contains(t, metrics, &timestampMetric{
-		Timestamp: pointer.Of(
+		ts: pointer.Of(
 			time.UnixMilli(1693162260000),
 		),
-		Watts: 23,
+		watts: 23,
 	})
 }
