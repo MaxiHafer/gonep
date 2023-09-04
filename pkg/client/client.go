@@ -1,8 +1,7 @@
-package gonep
+package client
 
 import (
 	"errors"
-	"fmt"
 	"github.com/go-resty/resty/v2"
 	_ "github.com/golang/mock/mockgen/model"
 	"github.com/maxihafer/gonep/pkg/authentication"
@@ -11,17 +10,14 @@ import (
 )
 
 const (
-	defaultScheme      = "http"
-	defaultHost        = "nep.nepviewer.com"
-	defaultServicePath = "pv_monitor/appservice"
+	defaultHost = "https://nep.nepviewer.com"
 )
 
-func NewClient(opts ...ClientOption) (*Client, error) {
+func NewClient(opts ...Option) (*Client, error) {
 	c := &Client{}
 
 	c.Client = resty.New()
-	c.Client.SetScheme(defaultScheme)
-	c.Client.SetBaseURL(fmt.Sprintf("%s://%s/%s", defaultScheme, defaultHost, defaultServicePath))
+	c.SetBaseURL(defaultHost)
 
 	for _, opt := range opts {
 		opt(c)

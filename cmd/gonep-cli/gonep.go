@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jedib0t/go-pretty/v6/table"
-	gonep2 "github.com/maxihafer/gonep/pkg/gonep"
+	gonep2 "github.com/maxihafer/gonep/pkg/client"
 	"github.com/urfave/cli/v2"
 	"log"
 	"os"
@@ -14,7 +14,7 @@ func main() {
 	var client *gonep2.Client
 
 	app := &cli.App{
-		Name:  "gonep",
+		Name:  "client",
 		Usage: "read nepviewer data",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
@@ -55,7 +55,7 @@ func main() {
 					return errors.New("password not set. Either token oder user/password authentication must be setup")
 				}
 
-				opts = append(opts, gonep2.WithUserPassword(username, password))
+				opts = append(opts, gonep2.WithEmailPassword(username, password))
 			} else {
 				opts = append(opts, gonep2.WithToken(token))
 			}

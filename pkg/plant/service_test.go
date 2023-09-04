@@ -2,7 +2,6 @@ package plant
 
 import (
 	"context"
-	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/maxihafer/gonep/pkg/gateway"
 	"github.com/stretchr/testify/suite"
@@ -25,8 +24,7 @@ func (s *ServiceTestSuite) SetupSuite() {
 	s.server = httpmock.New()(s.T())
 
 	client := resty.New()
-	client.SetBaseURL(fmt.Sprintf("%s/pv_monitor/appservice", s.server.URL()))
-	client.SetScheme("http")
+	client.SetBaseURL(s.server.URL())
 
 	s.service = &service{
 		client: client,

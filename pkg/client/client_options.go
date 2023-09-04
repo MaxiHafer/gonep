@@ -1,28 +1,27 @@
-package gonep
+package client
 
 import (
 	"github.com/maxihafer/gonep/pkg/authentication"
-	"net/url"
 )
 
-type ClientOption func(*Client)
+type Option func(*Client)
 
-func WithBaseURL(url *url.URL) ClientOption {
+func WithBaseURL(host string) Option {
 	return func(client *Client) {
-		client.Client.SetBaseURL(url.String())
+		client.Client.SetBaseURL(host)
 	}
 }
 
-func WithUserPassword(username, password string) ClientOption {
+func WithEmailPassword(email, password string) Option {
 	return func(client *Client) {
 		client.authenticationProvider = &authentication.BasicProvider{
-			Username: username,
+			Email:    email,
 			Password: password,
 		}
 	}
 }
 
-func WithToken(token string) ClientOption {
+func WithToken(token string) Option {
 	return func(client *Client) {
 		client.authenticationProvider = &authentication.TokenProvider{
 			Token: token,
