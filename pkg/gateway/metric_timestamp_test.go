@@ -8,15 +8,15 @@ import (
 )
 
 func TestMetric_UnmarshalJSON(t *testing.T) {
-	var metrics []*dayMetric
+	var metrics []*timestampMetric
 	err := json.Unmarshal(timestampResponseBody, &metrics)
 
 	require.NoError(t, err)
-	require.Contains(t, metrics, &dayMetric{
+	require.Contains(t, metrics, &timestampMetric{
 		Timestamp: time.UnixMilli(1693161960000),
 		Watts:     29,
 	})
-	require.Contains(t, metrics, &dayMetric{
+	require.Contains(t, metrics, &timestampMetric{
 		Timestamp: time.UnixMilli(1693162260000),
 		Watts:     23,
 	})
