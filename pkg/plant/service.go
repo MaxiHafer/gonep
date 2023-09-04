@@ -25,7 +25,7 @@ func (s *service) Status(ctx context.Context, id string) (*Status, error) {
 	resp, err := s.client.R().
 		SetContext(ctx).
 		SetPathParam("id", id).
-		Post("/status/{id}")
+		Post("/pv_monitor/appservice/status/{id}")
 
 	if err != nil {
 		return nil, err
@@ -42,7 +42,7 @@ func (s *service) Status(ctx context.Context, id string) (*Status, error) {
 func (s *service) List(ctx context.Context) ([]*Plant, error) {
 	resp, err := s.client.R().
 		SetContext(ctx).
-		Post("/pvlist")
+		Post("/pv_monitor/appservice/pvlist")
 	if err != nil {
 		return nil, err
 	}

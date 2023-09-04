@@ -1,4 +1,4 @@
-package gonep
+package client
 
 type UnsuccessfulLoginError struct {
 	Message string

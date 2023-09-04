@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/go-resty/resty/v2"
+	"time"
 )
 
 func NewService(client *resty.Client) Service {
@@ -12,27 +13,109 @@ func NewService(client *resty.Client) Service {
 	}
 }
 
+type Metric interface {
+	Time() time.Time
+	Value() int
+}
+
 type Service interface {
-	Today(ctx context.Context, id string) ([]*Metric, error)
+	Today(ctx context.Context, id string) ([]Metric, error)
+	Week(ctx context.Context, id string) ([]Metric, error)
+	Month(ctx context.Context, id string) ([]Metric, error)
+	Year(ctx context.Context, id string) ([]Metric, error)
 }
 
 type service struct {
 	client *resty.Client
 }
 
-func (s *service) Today(ctx context.Context, id string) ([]*Metric, error) {
+func (s *service) Today(ctx context.Context, id string) ([]Metric, error) {
 	resp, err := s.client.R().
 		SetContext(ctx).
 		SetPathParam("id", id).
-		Post("/detail/{id}")
+		Post("/pv_monitor/appservice/detail/{id}/0")
 
 	if err != nil {
 		return nil, err
 	}
 
-	var metrics []*Metric
-	if err := json.Unmarshal(resp.Body(), &metrics); err != nil {
+	var tsMetrics []*timestampMetric
+	if err := json.Unmarshal(resp.Body(), &tsMetrics); err != nil {
 		return nil, err
+	}
+
+	metrics := make([]Metric, len(tsMetrics))
+	for i := range tsMetrics {
+		metrics[i] = tsMetrics[i]
+	}
+
+	return metrics, nil
+}
+
+func (s *service) Week(ctx context.Context, id string) ([]Metric, error) {
+	resp, err := s.client.R().
+		SetContext(ctx).
+		SetPathParam("id", id).
+		Post("/pv_monitor/appservice/week/{id}/0")
+
+	if err != nil {
+		return nil, err
+	}
+
+	var dayMetrics []*dayMetric
+	if err := json.Unmarshal(resp.Body(), &dayMetrics); err != nil {
+		return nil, err
+	}
+
+	metrics := make([]Metric, len(dayMetrics))
+	for i := range dayMetrics {
+		metrics[i] = dayMetrics[i]
+	}
+
+	return metrics, nil
+}
+
+func (s *service) Month(ctx context.Context, id string) ([]Metric, error) {
+	resp, err := s.client.R().
+		SetContext(ctx).
+		SetPathParam("id", id).
+		Post("/pv_monitor/appservice/month/{id}/0")
+
+	if err != nil {
+		return nil, err
+	}
+
+	var monthMetrics []*monthMetric
+	if err := json.Unmarshal(resp.Body(), &monthMetrics); err != nil {
+		return nil, err
+	}
+
+	metrics := make([]Metric, len(monthMetrics))
+	for i := range monthMetrics {
+		metrics[i] = monthMetrics[i]
+	}
+
+	return metrics, nil
+}
+
+func (s *service) Year(ctx context.Context, id string) ([]Metric, error) {
+	resp, err := s.client.R().
+		SetContext(ctx).
+		SetPathParam("id", id).
+		Post("/pv_monitor/appservice/year/{id}/0")
+
+	if err != nil {
+		return nil, err
+	}
+
+	var monthMetrics []*monthMetric
+	if err := json.Unmarshal(resp.Body(), &monthMetrics); err != nil {
+		return nil, err
+	}
+
+	metrics := make([]Metric, len(monthMetrics))
+	for i := range monthMetrics {
+		metrics[i] = monthMetrics[i]
 	}
 
 	return metrics, nil

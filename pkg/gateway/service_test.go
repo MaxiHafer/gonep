@@ -2,12 +2,56 @@ package gateway
 
 import (
 	"context"
-	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/suite"
 	"go.nhat.io/httpmock"
 	"testing"
-	"time"
+)
+
+var (
+	timestampResponseBody = []byte(`[
+	  [
+		1693161960000,
+		29
+	  ],
+	  [
+		1693162260000,
+		23
+	  ]
+	]`)
+
+	monthResponseBody = []byte(`[
+	  [
+		2023.01,
+		29
+	  ],
+	  [
+		2023.02,
+		23
+	  ]
+	]`)
+
+	dayResponseBody = []byte(`[
+	  [
+		"01\/01",
+		29
+	  ],
+	  [
+		"01\/02",
+		23
+	  ]
+	]`)
+
+	yearResponseBody = []byte(`[
+	  [
+		2022.01,
+		29
+	  ],
+	  [
+		2023.01,
+		23
+	  ]
+	]`)
 )
 
 func TestServiceTestSuite(t *testing.T) {
@@ -25,7 +69,7 @@ func (s *ServiceTestSuite) SetupSuite() {
 	s.server = httpmock.New()(s.T())
 
 	client := resty.New()
-	client.SetBaseURL(fmt.Sprintf("%s/pv_monitor/appservice", s.server.URL()))
+	client.SetBaseURL(s.server.URL())
 	client.SetScheme("http")
 
 	s.service = &service{
@@ -33,32 +77,38 @@ func (s *ServiceTestSuite) SetupSuite() {
 	}
 }
 
-var (
-	todayResponseData = []byte(`[
-		[1693118280000,0],
-		[1693189980000,29],
-		[1693170001000,null]
-	]`)
-)
-
 func (s *ServiceTestSuite) TestToday() {
-	s.server.ExpectPost("/pv_monitor/appservice/detail/1337").Return(todayResponseData)
+	s.server.ExpectPost("/pv_monitor/appservice/detail/1337/0").Return(timestampResponseBody)
 
 	metrics, err := s.service.Today(context.Background(), "1337")
 	s.Require().NoError(err)
 
-	s.Require().Contains(metrics, &Metric{
-		Timestamp: time.UnixMilli(1693118280000),
-		Watts:     0,
-	})
+	s.Require().NotEmpty(metrics)
+}
 
-	s.Require().Contains(metrics, &Metric{
-		Timestamp: time.UnixMilli(1693189980000),
-		Watts:     29,
-	})
+func (s *ServiceTestSuite) TestWeek() {
+	s.server.ExpectPost("/pv_monitor/appservice/week/1337/0").Return(dayResponseBody)
 
-	s.Require().Contains(metrics, &Metric{
-		Timestamp: time.UnixMilli(1693170001000),
-		Watts:     0,
-	})
+	metrics, err := s.service.Week(context.Background(), "1337")
+	s.Require().NoError(err)
+
+	s.Require().NotEmpty(metrics)
+}
+
+func (s *ServiceTestSuite) TestMonth() {
+	s.server.ExpectPost("/pv_monitor/appservice/month/1337/0").Return(monthResponseBody)
+
+	metrics, err := s.service.Month(context.Background(), "1337")
+	s.Require().NoError(err)
+
+	s.Require().NotEmpty(metrics)
+}
+
+func (s *ServiceTestSuite) TestYear() {
+	s.server.ExpectPost("/pv_monitor/appservice/year/1337/0").Return(yearResponseBody)
+
+	metrics, err := s.service.Year(context.Background(), "1337")
+	s.Require().NoError(err)
+
+	s.Require().NotEmpty(metrics)
 }

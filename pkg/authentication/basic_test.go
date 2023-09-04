@@ -44,7 +44,7 @@ func (s *BasicProviderTestSuite) TestMiddleware_TokenSet() {
 
 func (s *BasicProviderTestSuite) TestMiddleware_TokenUnset() {
 	provider := BasicProvider{
-		Username: "test",
+		Email:    "test",
 		Password: "1234",
 	}
 
@@ -72,11 +72,10 @@ func (s *BasicProviderTestSuite) TestMiddleware_TokenUnset() {
 		Once()
 
 	client := resty.New()
-	client.SetBaseURL(fmt.Sprintf("%s/pv_monitor/appservice", s.server.URL()))
-	client.SetScheme("http")
+	client.SetBaseURL(s.server.URL())
 	client.OnBeforeRequest(provider.Middleware())
 
-	resp, err := client.R().Post("/test")
+	resp, err := client.R().Post("/pv_monitor/appservice/test")
 	s.Require().NoError(err)
 
 	s.Require().NotNil(resp)

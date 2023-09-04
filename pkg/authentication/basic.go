@@ -12,7 +12,7 @@ import (
 var _ Provider = (*BasicProvider)(nil)
 
 type BasicProvider struct {
-	Username string
+	Email    string
 	Password string
 
 	token *string
@@ -41,7 +41,7 @@ func (p *BasicProvider) Middleware() resty.RequestMiddleware {
 
 func (p *BasicProvider) fetchToken(ctx context.Context, client *resty.Client) (*string, error) {
 	body := url.Values{}
-	body.Set("email", p.Username)
+	body.Set("email", p.Email)
 	body.Set("password", p.Password)
 
 	// use copy because we cannot disable the authentication middleware
@@ -53,7 +53,7 @@ func (p *BasicProvider) fetchToken(ctx context.Context, client *resty.Client) (*
 		SetContext(ctx).
 		SetFormDataFromValues(body).
 		SetHeader("Cache-Control", "no-cache").
-		Post("/login")
+		Post("/pv_monitor/appservice/login")
 
 	if err != nil {
 		return nil, err
