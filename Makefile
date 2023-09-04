@@ -1,7 +1,9 @@
-.PHONY: build
-build:
-	go build -o build/gonep-cli ./cmd/gonep-cli/gonep.go
+
 
 .PHONY: test
 test:
 	go test -race ./...
+
+.PHONY: dep
+dep:
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.54.2
